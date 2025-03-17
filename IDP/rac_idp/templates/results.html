@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2, h3 {
+            color: #333;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .matched {
+            background-color: #d4edda; /* Light green for matches */
+            color: #155724;
+        }
+
+        .mismatched {
+            background-color:white; /* Light red for mismatches */
+            color: #721c24;
+        }
+
+        .neutral {
+            background-color: #f8f9fa; /* Default for neutral rows */
+            color: #333;
+        }
+
+        img {
+            width: 100%;
+            max-width: 600px;
+            margin-top: 20px;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Processing Results for {{ applicant.name }}</h2>
+
+       
+      
+
+        <!-- ✅ Full Data Analysis Table -->
+        <div class="section">
+            <h3>Mismatches in Expected vs Extracted Data</h3>
+            <table>
+                <tr>
+                    <th>Field</th>
+                    <th>Actual Expected Data</th>
+                    <th>Extracted Data</th>
+                    <th>Mismatch (%)</th>
+                </tr>
+                {% for mismatch in mismatches %}
+                <tr class="{% if mismatch.mismatch_percentage > 0 %} mismatched {% else %} matched {% endif %}">
+                    <td>{{ mismatch.field }}</td>
+                    <td>{{ mismatch.expected }}</td>
+                    <td>{{ mismatch.extracted }}</td>
+                    <td>
+                        {% if mismatch.mismatch_percentage > 0 %}
+                            <strong style="color: red;">{{ mismatch.mismatch_percentage }}%</strong>
+                        {% else %}
+                            <strong style="color: green;">0% (Matched)</strong>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <!-- ✅ Mismatch Visualization Graph -->
+        <div class="section">
+            <h3>Mismatch Visualization</h3>
+            {% if mismatch_plot_path %}
+            <img src="{{ mismatch_plot_path }}" alt="Mismatch Chart">
+            {% else %}
+            <p style="text-align: center; color: green;">No visualization needed as all data matched.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</body>
+
+</html>
+
+
+
+

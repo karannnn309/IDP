@@ -1,0 +1,13 @@
+Django
+pytesseract
+Pillow
+PyMuPDF
+pdf2image
+python-docx
+requests
+matplotlib
+seaborn
+fuzzywuzzy
+python-Levenshtein
+pandas
+google-generativeai
