@@ -18,19 +18,25 @@
                         <div class="form-group">
                             <label for="id_username">Username</label>
                             {{ form.username }}
-                        </div>
+                        </div><br>
                         <div class="form-group">
                             <label for="id_email">Email</label>
                             {{ form.email }}
-                        </div>
+                        </div> <br>
+                        <div class="form-group">
+                            <label for="id_phone">Phone</label>
+                            {{ form.phone }}
+                        </div><br>
+
                         <div class="form-group">
                             <label for="id_password1">Password</label>
                             {{ form.password1 }}
-                        </div>
+                        </div><br>
+
                         <div class="form-group">
                             <label for="id_password2">Confirm Password</label>
                             {{ form.password2 }}
-                        </div>
+                        </div><br>
                         
                         {% if form.non_field_errors %}
                             <div class="alert alert-danger mt-3">

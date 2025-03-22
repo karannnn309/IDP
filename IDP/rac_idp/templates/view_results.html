@@ -18,7 +18,7 @@
                             <th>Field</th>
                             <th>Expected Data</th>
                             <th>Extracted Data</th>
-                            <th>Mismatch %</th>
+                            
                         </tr>
                     </thead>
                     <tbody>
@@ -27,16 +27,27 @@
                             <td>{{ field }}</td>
                             <td>{{ data.Expected }}</td>
                             <td>{{ data.Extracted|default:"Not Found" }}</td>
-                            <td>{{ data.Mismatch }}%</td>
+                            
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-                
+                <h2>Overall Mismatch mismatch_percentage:{{ mismatch }}</h2>
 
+                {% if mismatch_plot_path %}
+                    <div class="mt-4">
+                        <h5>Mismatch Visualization:</h5>
+                        <img src="{{ mismatch_plot_path }}" alt="Mismatch Plot" class="img-fluid">
+                    </div>
+                {% endif %}
             {% else %}
                 <p>No mismatches found!</p>
             {% endif %}
+
+                
+                
+
+           
 
             <h4>Similar Fields:</h4>
             {% if similarities %}

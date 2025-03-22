@@ -22,10 +22,13 @@ def signup_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            # Create an Applicant record for the user
-            Applicant.objects.create(user=user)  # Automatically create the applicant on signup
-            return redirect('/login/')  # Redirect to a page after successful signup
+            # Create an Applicant record for the user after successful signup
+            Applicant.objects.create(user=user)  # Automatically create the applicant profile
+            return redirect('login')  # Redirect to applicant dashboard after signup
+        else:
+            print(form.errors)
     else:
+        
         form = SignupForm()
     return render(request, 'auth/signup.html', {'form': form})
 
@@ -35,41 +38,61 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-
-            # Check if there's a 'next' parameter in the URL (for redirecting to the original page)
-            #next_url = request.GET.get('next', 'applicant_dashboard')  # Default to dashboard if 'next' not found
-
-            return redirect('applicant_dashboard')  # Redirect to the 'next' page
-
+            return redirect('applicant_dashboard')  # Redirect to applicant dashboard after login
     else:
         form = AuthenticationForm()
-
     return render(request, 'auth/login.html', {'form': form})
 
-# Logout View
 def logout_view(request):
     logout(request)
     messages.success(request, "You have logged out.")
     return redirect('landing')
 
 @login_required
-@login_required
 def applicant_dashboard(request):
-    # Check if the logged-in user has an applicant profile
-    applicant = Applicant.objects.filter(user=request.user).first()
+    # Fetch the applicant profile for the logged-in user
+    applicant = get_object_or_404(Applicant, user=request.user)
 
-    if applicant:
-        has_applied = True
-        # Fetch past application results
-        past_results = ApplicationResult.objects.filter(applicant=applicant)
-    else:
-        has_applied = False
-        past_results = None
+    # Check if the applicant has already submitted an application
+    has_applied = ApplicationResult.objects.filter(applicant=applicant).exists()
+
+    # Fetch past application results if available
+    past_results = ApplicationResult.objects.filter(applicant=applicant) if has_applied else None
 
     return render(request, "dashboard.html", {
         "has_applied": has_applied,
         "past_results": past_results
     })
+# View to handle document submission and analysis
+@login_required
+def submit_application(request):
+    user = request.user  # Logged-in user
+
+    try:
+        # Try to fetch the existing applicant for the user
+        applicant = Applicant.objects.get(user=user)
+    except Applicant.DoesNotExist:
+        applicant = None  # If not found, set to None
+
+    if request.method == 'POST':
+        if applicant:
+            applicant_form = ApplicantForm(request.POST, request.FILES, instance=applicant)  # Update existing applicant
+        else:
+            applicant_form = ApplicantForm(request.POST, request.FILES)  # Create new applicant
+        
+        if applicant_form.is_valid():
+            applicant = applicant_form.save(commit=False)
+            applicant.user = user  # Assign the logged-in user
+            applicant.save()
+            
+            return redirect('verify_document', applicant_id=applicant.id)  # Redirect after successful submission
+        else:
+            print(applicant_form.errors)  # Debugging
+
+    else:
+        applicant_form = ApplicantForm(instance=applicant)  # Load form with existing data if any
+
+    return render(request, 'submit_application.html', {'applicant_form': applicant_form})
 
 
 @login_required
@@ -88,35 +111,16 @@ def view_result(request, result_id):
         "extra_fields": mismatches_data.get("extra_fields", [])
     })
 
-# View to handle document submission and analysis
-@login_required
-def submit_application(request):
-    if request.method == "POST":
-        form = ApplicantForm(request.POST, request.FILES)
-        if form.is_valid():
-            # Create an applicant instance but don't save yet
-            applicant = form.save(commit=False)
 
-            # Manually assign the logged-in user to the user field
-            applicant.user = request.user  # Assign the logged-in user to the applicant's user field
 
-            # Now save the applicant object
-            applicant.save()
 
-            # Create an ApplicationResult entry for this applicant
-            application_result = ApplicationResult.objects.create(
-                applicant=applicant
-            )
-
-            return redirect('verify_document', applicant_id=applicant.id)  # Redirect to verify documents page
-    else:
-        form = ApplicantForm()
-
-    return render(request, 'submit_application.html', {'applicant_form': form})
 
 @login_required
 def verify_document(request, applicant_id):
     applicant = get_object_or_404(Applicant, id=applicant_id)
+
+    # Ensure that the applicant has an ApplicationResult
+    application_result, created = ApplicationResult.objects.get_or_create(applicant=applicant)
 
     if request.method == "POST":
         document_type = request.POST.get("document_type")  # Get document type selected by user
@@ -208,10 +212,9 @@ def verify_document(request, applicant_id):
             overall_mismatch_percentage = round(total_mismatches / num_fields, 2) if num_fields else 0
 
             # Step 7: Save ApplicationResult with mismatches
-            application_result = ApplicationResult.objects.get(applicant=applicant)
             application_result.mismatches = json.dumps(validation_result, indent=2)
             application_result.mismatch_percentage = overall_mismatch_percentage
-            applicant.mismatch_percentage=overall_mismatch_percentage
+            applicant.mismatch_percentage = overall_mismatch_percentage
             application_result.save()
 
             print(f"🔍 Validation Result: {json.dumps(validation_result, indent=2)}")
@@ -229,7 +232,6 @@ def verify_document(request, applicant_id):
             return redirect("verify_document", applicant_id=applicant.id)
 
     return render(request, "verify_documents.html", {"applicant": applicant})
-
 
 @login_required
 def applicant_results(request, applicant_id):
@@ -252,11 +254,13 @@ def applicant_results(request, applicant_id):
             "mismatch_percentage": details.get("Mismatch %", 0),
         })
 
+    overall_mismatch_percentage =application_result.mismatch_percentage
+
     # Generate mismatch visualization only if mismatches exist
     mismatch_plot_url = None
     if mismatches:
         mismatch_plot_path = visualize_mismatches(mismatches, applicant.id)
-        application_result.mismtach_plot=mismatch_plot_path
+        application_result.mismatch_plot_path = mismatch_plot_path
         if mismatch_plot_path:
             mismatch_plot_url = settings.MEDIA_URL + os.path.basename(mismatch_plot_path)
 
@@ -265,5 +269,6 @@ def applicant_results(request, applicant_id):
         "extracted_data": extracted_data,
         "expected_data": expected_data,
         "mismatches": formatted_mismatches,
-        "mismatch_plot_path": mismatch_plot_url
+        "mismatch_plot_path": mismatch_plot_url,
+        "mismatch":overall_mismatch_percentage
     })
