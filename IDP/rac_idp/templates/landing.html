@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome to IDP System{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero text-center d-flex align-items-center justify-content-center">
+    <div class="container">
+        <h1 class="text-white fw-bold">Automated Document Verification for DRDO's RAC</h1>
+        <p class="text-white-50">Fast, Accurate, and AI-powered Validation for Job Applications</p>
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-lg mt-3">Apply Now</a>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features py-5">
+    <div class="container">
+        <h2 class="text-center text-white mb-4">Why Choose Our IDP System?</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <i class="fas fa-file-alt feature-icon"></i>
+                    <h4>Document Verification</h4>
+                    <p>AI-powered validation of Aadhaar, Caste, EWS, and Academic documents.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <i class="fas fa-chart-line feature-icon"></i>
+                    <h4>Real-time Mismatch Analysis</h4>
+                    <p>Get instant feedback on discrepancies between form data and documents.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-box">
+                    <i class="fas fa-user-shield feature-icon"></i>
+                    <h4>Secure & Trusted</h4>
+                    <p>Designed for DRDO’s RAC with robust security measures.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

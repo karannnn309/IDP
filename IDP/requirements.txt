@@ -11,3 +11,5 @@ fuzzywuzzy
 python-Levenshtein
 pandas
 google-generativeai
+docx 
+pdfminer.high_level

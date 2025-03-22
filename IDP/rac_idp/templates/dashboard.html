@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block title %}Applicant Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="text-center">Welcome to Your Dashboard, {{ user.first_name }}!</h3>
+    <p class="text-center">Choose an action below:</p>
+
+    <div class="row">
+        <!-- Apply for Job -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4>Apply for Job</h4>
+                    <p>Fill out your details and apply for a job.</p>
+                    
+                        <a href="{% url 'submit_application' %}" class="btn btn-primary">Apply Now</a>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <!-- View Results -->
+        <div class="container">
+            <h2>Welcome, {{ user.username }}!</h2>
+            <div class="section">
+                <h3>Your Past Application Results</h3>
+                {% if past_results %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Application Date</th>
+                                <th>Mismatches Found</th>
+                                <th>View Results</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in past_results %}
+                            <tr>
+                                <td>{{ result.application_date }}</td>
+                                <td>{{ result.mismatches|length }}</td>
+                                <td><a href="{% url 'view_result' result.id %}">View</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>You have not applied yet or there are no results to show.</p>
+                {% endif %}
+            </div>
+        </div>
+{% endblock %}

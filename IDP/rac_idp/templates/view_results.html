@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Application Result{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="text-center">Application Result</h3>
+    
+    <div class="card">
+        <div class="card-body">
+            <p><strong>Application Date:</strong> {{ result.application_date }}</p>
+            
+            <h4>Mismatches:</h4>
+            {% if mismatches %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Expected Data</th>
+                            <th>Extracted Data</th>
+                            <th>Mismatch %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field, data in mismatches.items %}
+                        <tr>
+                            <td>{{ field }}</td>
+                            <td>{{ data.Expected }}</td>
+                            <td>{{ data.Extracted|default:"Not Found" }}</td>
+                            <td>{{ data.Mismatch }}%</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+
+            {% else %}
+                <p>No mismatches found!</p>
+            {% endif %}
+
+            <h4>Similar Fields:</h4>
+            {% if similarities %}
+                <ul>
+                    {% for field, value in similarities.items %}
+                        <li><strong>{{ field }}:</strong> {{ value }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No similarities detected.</p>
+            {% endif %}
+            
+            <a href="{% url 'applicant_dashboard' %}" class="btn btn-primary mt-3">Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

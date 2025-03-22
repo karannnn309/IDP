@@ -71,6 +71,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'IDP.wsgi.application'
+\
 
 
 # Database
@@ -117,16 +118,18 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
+STATIC_DIR = BASE_DIR / 'static'
 
-STATIC_URL = 'static/'
-STATIC_ROOT="staticfiles"
-STATICFILES_DIRS=[os.path.join(BASE_DIR / 'static')]
-
+STATIC_URL = 'BASE_DIR/static/'
+STATICFILES_DIRS = [STATIC_DIR]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
 
 MEDIA_ROOT = os.path.join(BASE_DIR/ "media") # ✅ This should be a string
 # Stores files in the "media" directory
 MEDIA_URL = '/media/'
 MEDIA_PATH=str(MEDIA_ROOT)
+
+LOGIN_REDIRECT_URL = 'applicant_dashboard'  # This should be the name of your dashboard URL
 
 
 
