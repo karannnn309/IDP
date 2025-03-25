@@ -341,4 +341,3 @@ def visualize_mismatches(validation_result, applicant_id):
     except Exception as e:
         print(f"❌ Error in visualize_mismatches: {e}")
         return None
-

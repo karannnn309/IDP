@@ -129,6 +129,9 @@ def verify_document(request, applicant_id):
         document_fields = {
             "aadhaar": "aadhaar_document",
             "marksheet": "marksheet_document",
+            "ews": "ews_certificate_document",
+            "income": "income_certificate_document",
+            "caste": "caste_certificate_document",
         }
         
         # Get document field name from mapping
@@ -179,13 +182,35 @@ def verify_document(request, applicant_id):
                 expected_data = {
                     "name": applicant.name,
                     "date_of_birth": applicant.date_of_birth.strftime("%Y-%m-%d") if applicant.date_of_birth else None,
-                    #"roll_number": applicant.roll_number,
                     "university": applicant.university,
                     "course": applicant.course,
                     "year_of_passing": applicant.year_of_passing,
                     "percentage": applicant.percentage,
                 }
+            elif document_type == "ews":
+                expected_data = {
+                    "name": applicant.name,
+                    
+                    #"income": applicant.income,  # Assuming 'income' is stored in the Applicant model
+                    #"ews_category": applicant.ews_category,  # If applicable
+                }
+            elif document_type == "income":
+                expected_data = {
+                    "name": applicant.name,
+                   
+                    "annual_income": applicant.annual_income,  # Assuming 'annual_income' is in the model
+                    "family_members": applicant.family_members,  # If applicable
+                }
+            elif document_type == "caste":
+                expected_data = {
+                    "name": applicant.name,
+                    "date_of_birth": applicant.date_of_birth.strftime("%Y-%m-%d") if applicant.date_of_birth else None,
+                    "caste": applicant.caste_category,  # Assuming 'caste' is stored in the model
+                   # "caste_certificate_number": applicant.caste_certificate_number,  # If applicable
+                }
 
+            print(f"Expected Data: {expected_data}")
+            
             # Step 3: Send extracted text & expected data to Gemini API for validation
             gemini_response = send_to_gemini(extracted_text, expected_data)
 

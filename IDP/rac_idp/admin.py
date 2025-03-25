@@ -10,7 +10,7 @@ class ApplicantAdmin(admin.ModelAdmin):
 
     # Display documents and file paths in the admin panel
     fields = ('user', 'name', 'date_of_birth', 'phone', 'address', 'caste_category', 'aadhar_number', 
-              'aadhaar_document', 'ews_certificate', 'caste_certificate', 'income_certificate', 
+              'aadhaar_document', 'ews_certificate_document', 'caste_certificate_document', 'income_certificate_document', 
               'marksheet_document', 'university', 'course', 'year_of_passing', 'percentage', 
               'work_experience', 'experience_certificate', 'extracted_data', 'expected_json', 
               'mismatches', 'mismatch_percentage')

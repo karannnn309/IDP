@@ -18,7 +18,7 @@ class ApplicantForm(forms.ModelForm):
         model = Applicant
         fields = [
             'name', 'date_of_birth', 'phone', 'address', 'caste_category', 'aadhar_number',
-            'aadhaar_document', 'ews_certificate', 'caste_certificate', 'income_certificate',
+            'aadhaar_document', 'ews_certificate_document', 'caste_certificate_document', 'income_certificate_document',
             'marksheet_document', 'university', 'course', 'year_of_passing', 'percentage',
             'work_experience', 'experience_certificate'
         ]

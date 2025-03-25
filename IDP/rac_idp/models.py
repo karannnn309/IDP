@@ -13,9 +13,9 @@ class Applicant(models.Model):
 
     # Uploaded Documents
     aadhaar_document = models.FileField(upload_to="documents/aadhaar/", null=True, blank=True)
-    ews_certificate = models.FileField(upload_to="documents/ews/", null=True, blank=True)
-    caste_certificate = models.FileField(upload_to="documents/caste/", null=True, blank=True)
-    income_certificate = models.FileField(upload_to="documents/income/", null=True, blank=True)
+    ews_certificate_document = models.FileField(upload_to="documents/ews/", null=True, blank=True)
+    caste_certificate_document = models.FileField(upload_to="documents/caste/", null=True, blank=True)
+    income_certificate_document = models.FileField(upload_to="documents/income/", null=True, blank=True)
     marksheet_document = models.FileField(upload_to="documents/marksheet/", null=True, blank=True)  # Fixed path
 
     # Academic Information
