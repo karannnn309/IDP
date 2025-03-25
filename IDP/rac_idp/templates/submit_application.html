@@ -3,47 +3,475 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Submit Job Application</title>
+    <title>Job Application Form</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Ultra-lean base styles */
+        :root {
+            --primary: #2563eb;
+            --primary-light: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --accent: #ec4899;
+            --dark: #111827;
+            --light: #f9fafb;
+            --gray: #6b7280;
+            --border: #e5e7eb;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #f9fafb;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+            color: #111827;
+        }
+        
+        /* Micro-interaction loader (barely noticeable but effective) */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary);
+            transform: scaleX(0);
+            transform-origin: left;
+            animation: pageLoad 1s ease-out forwards;
+            z-index: 1000;
+        }
+        
+        @keyframes pageLoad {
+            to { transform: scaleX(1); }
+        }
+        
+        /* Ultra-light container with hardware-accelerated animations */
+        .application-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            padding: 2.5rem;
+            position: relative;
+            overflow: hidden;
+            will-change: transform, opacity;
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Optimized typography */
+        h2 {
+            color: var(--dark);
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+        
+        /* Form elements with GPU-accelerated transitions */
+        .form-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.9375rem;
+            transition: all 0.15s ease;
+            background-color: white;
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+            outline: none;
+        }
+        
+        /* File input styling */
+        input[type="file"] {
+            padding: 0.75rem;
+            background: white;
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+        }
+        
+        input[type="file"]::file-selector-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin-right: 1rem;
+            font-size: 0.875rem;
+            transition: background 0.15s ease;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Form layout */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-col {
+            flex: 1 1 calc(50% - 0.75rem);
+            min-width: 0;
+        }
+        
+        /* Sections with subtle entrance animations */
+        .form-section {
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+            animation: slideIn 0.5s ease-out both;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-section h5 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .form-section h5 i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+        
+        /* Button with optimized hover effects */
+        .btn-primary {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            margin-top: 1rem;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        /* Alert with minimal animation */
+        .alert-danger {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .application-container {
+                padding: 1.5rem;
+                margin: 1rem;
+                border-radius: 8px;
+            }
+            
+            .form-col {
+                flex: 1 1 100%;
+            }
+            
+            h2 {
+                font-size: 1.5rem;
+            }
+        }
+        
+        /* Performance-optimized floating elements */
+        .floating-elements {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .floating-element {
+            position: absolute;
+            background: rgba(59, 130, 246, 0.03);
+            border-radius: 50%;
+            animation: float 15s linear infinite;
+            will-change: transform;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(20px, 20px); }
+            50% { transform: translate(40px, 0); }
+            75% { transform: translate(20px, -20px); }
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h2 class="mb-4 text-center">Job Application Form</h2>
+    <!-- Performance-optimized background elements -->
+    <div class="floating-elements" id="floatingElements"></div>
 
-        <!-- Display Form Errors -->
-        {% if applicant_form.errors %}
+    <div class="application-container">
+        <h2><i class="fas fa-file-alt"></i> Job Application Form</h2>
+    
+        {% if applicant_form.errors or document_form.errors %}
             <div class="alert alert-danger">
-                <strong>Errors:</strong>
+                <strong><i class="fas fa-exclamation-circle"></i> Errors:</strong>
                 <ul>
                     {% for field, errors in applicant_form.errors.items %}
-                        {% for error in errors %}
-                            <li><strong>{{ field|title }}</strong>: {{ error }}</li>
-                        {% endfor %}
+                        <li>{{ field }}: {{ errors.0 }}</li>
+                    {% endfor %}
+                    {% for field, errors in document_form.errors.items %}
+                        <li>{{ field }}: {{ errors.0 }}</li>
                     {% endfor %}
                 </ul>
             </div>
         {% endif %}
-
-        <!-- Form Start -->
-        <form method="post" enctype="multipart/form-data" class="border p-4 shadow rounded">
+    
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-
-            <!-- Loop through fields to render form dynamically -->
-            {% for field in applicant_form %}
-                <div class="mb-3">
-                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <small class="form-text text-muted">{{ field.help_text }}</small>
-                    {% endif %}
+            
+            <div class="form-section" style="animation-delay: 0.1s">
+                <h5><i class="fas fa-user"></i> Personal Information</h5>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_name" class="form-label">Full Name</label>
+                        {{ applicant_form.name }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_email" class="form-label">Email</label>
+                        {{ applicant_form.email }}
+                    </div>
                 </div>
-            {% endfor %}
-
-            <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary w-100">Submit Application</button>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_phone" class="form-label">Phone Number</label>
+                        {{ applicant_form.phone }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_date_of_birth" class="form-label">Date of Birth</label>
+                        {{ applicant_form.date_of_birth }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_address" class="form-label">Address</label>
+                        {{ applicant_form.address }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section" style="animation-delay: 0.2s">
+                <h5><i class="fas fa-tags"></i> Category Information</h5>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_caste_category" class="form-label">Caste Category</label>
+                        {{ applicant_form.caste_category }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_ews" class="form-label">EWS Category</label>
+                        {{ applicant_form.ews }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_aadhar_number" class="form-label">Aadhar Number</label>
+                        {{ applicant_form.aadhar_number }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section" style="animation-delay: 0.3s">
+                <h5><i class="fas fa-file-upload"></i> Document Uploads</h5>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_aadhar_document" class="form-label">Aadhar Document</label>
+                        {{ applicant_form.aadhaar_document }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_ews_certificate" class="form-label">EWS Certificate</label>
+                        {{ applicant_form.ews_certificate }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_caste_certificate" class="form-label">Caste Certificate</label>
+                        {{ applicant_form.caste_certificate }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_income_certificate" class="form-label">Income Certificate</label>
+                        {{ applicant_form.income_certificate }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section" style="animation-delay: 0.4s">
+                <h5><i class="fas fa-graduation-cap"></i> Education Information</h5>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_university" class="form-label">University</label>
+                        {{ applicant_form.university }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_course" class="form-label">Course</label>
+                        {{ applicant_form.course }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_year_of_passing" class="form-label">Year of Passing</label>
+                        {{ applicant_form.year_of_passing }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_percentage" class="form-label">Percentage</label>
+                        {{ applicant_form.percentage }}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_marksheet_document" class="form-label">Marksheet Document</label>
+                        {{ applicant_form.marksheet_document }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section" style="animation-delay: 0.5s">
+                <h5><i class="fas fa-briefcase"></i> Work Experience</h5>
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_work_experience" class="form-label">Work Experience (Years)</label>
+                        {{ applicant_form.work_experience }}
+                    </div>
+                    <div class="form-col">
+                        <label for="id_experience_certificate" class="form-label">Experience Certificate</label>
+                        {{ applicant_form.experience_certificate }}
+                    </div>
+                </div>
+            </div>
+    
+            <button type="submit" class="btn btn-primary" style="animation-delay: 0.6s">
+                <i class="fas fa-paper-plane"></i> Submit Application
+            </button>
         </form>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Ultra-light background animation (performance optimized)
+        function createFloatingElements() {
+            const container = document.getElementById('floatingElements');
+            const colors = ['rgba(59, 130, 246, 0.03)', 'rgba(124, 58, 237, 0.03)'];
+            
+            for (let i = 0; i < 8; i++) {
+                const element = document.createElement('div');
+                element.className = 'floating-element';
+                
+                // Random properties
+                const size = Math.random() * 300 + 100;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                const duration = Math.random() * 10 + 10;
+                const delay = Math.random() * -20;
+                
+                // Apply styles
+                element.style.width = `${size}px`;
+                element.style.height = `${size}px`;
+                element.style.background = color;
+                element.style.left = `${Math.random() * 100}%`;
+                element.style.top = `${Math.random() * 100}%`;
+                element.style.animationDuration = `${duration}s`;
+                element.style.animationDelay = `${delay}s`;
+                
+                container.appendChild(element);
+            }
+        }
+        
+        // Initialize on DOM load
+        document.addEventListener('DOMContentLoaded', () => {
+            createFloatingElements();
+            
+            // Add form control classes
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                input.classList.add('form-control');
+            });
+            
+            // Add special class to file inputs
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.classList.add('form-control-file');
+            });
+            
+            // Add sequential animations
+            document.querySelectorAll('.form-section').forEach((section, index) => {
+                section.style.animationDelay = `${index * 0.1 + 0.1}s`;
+            });
+        });
+    </script>
 </body>
 </html>

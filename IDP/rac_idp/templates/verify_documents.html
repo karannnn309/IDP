@@ -5,33 +5,568 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Job Application</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Cyberpunk-inspired base */
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --primary-light: #4cc9f0;
+            --secondary: #7209b7;
+            --accent: #f72585;
+            --dark: #0a1128;
+            --light: #f8f9fa;
+        }
+        
+        body {
+            background-color: var(--dark);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: var(--light);
+        }
+        
+        /* Holographic grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(rgba(67, 97, 238, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(67, 97, 238, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            z-index: -2;
+            animation: gridScroll 100s linear infinite;
+        }
+        
+        @keyframes gridScroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 1000px 1000px; }
+        }
+        
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(100, 115, 255, 0.15);
+            border-radius: 50%;
+            animation: floatParticle linear infinite;
+        }
+        
+        @keyframes floatParticle {
+            0% { transform: translateY(0) translateX(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) translateX(100px); opacity: 0; }
+        }
+        
+        /* Neon glow container */
+        .application-container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: fadeIn 0.8s cubic-bezier(0.39, 0.575, 0.565, 1) both;
+        }
+        
+        .application-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--primary-light), var(--primary));
+            background-size: 400%;
+            z-index: -1;
+            border-radius: 18px;
+            opacity: 0.3;
+            animation: glowBorder 15s linear infinite;
+        }
+        
+        @keyframes glowBorder {
+            0% { background-position: 0 0; }
+            50% { background-position: 300% 0; }
+            100% { background-position: 0 0; }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Typography */
+        h2 {
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            font-weight: 600;
+            position: relative;
+            padding-bottom: 15px;
+            font-size: 2.2rem;
+            text-shadow: 0 0 10px rgba(67, 97, 238, 0.5);
+        }
+        
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 3px;
+        }
+        
+        h2 i {
+            margin-right: 15px;
+            color: var(--primary-light);
+        }
+        
+        /* Form elements */
+        .form-label {
+            font-weight: 500;
+            color: var(--primary-light);
+            margin-bottom: 8px;
+            display: block;
+            font-size: 0.95rem;
+        }
+        
+        .form-control {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            color: white;
+            transition: all 0.3s ease;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 0.2rem rgba(67, 97, 238, 0.25);
+            color: white;
+        }
+        
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* File inputs */
+        input[type="file"] {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        input[type="file"]::file-selector-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-right: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-dark);
+        }
+        
+        /* Form layout */
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-col {
+            padding-right: 15px;
+            padding-left: 15px;
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+        
+        /* Sections */
+        .form-section {
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.6s ease-out both;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 20px;
+        }
+        
+        .form-section h5 {
+            color: var(--primary-light);
+            font-weight: 500;
+            margin-bottom: 25px;
+            padding-left: 15px;
+            border-left: 4px solid var(--accent);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-section h5 i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+        
+        /* Button */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border: none;
+            padding: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            width: 100%;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+            z-index: 1;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(67, 97, 238, 0.6);
+        }
+        
+        .btn-primary:hover::before {
+            opacity: 1;
+        }
+        
+        .btn-primary i {
+            margin-right: 10px;
+        }
+        
+        /* Alerts */
+        .alert-danger {
+            background: rgba(247, 37, 133, 0.15);
+            border: 1px solid rgba(247, 37, 133, 0.3);
+            border-radius: 8px;
+            margin-bottom: 30px;
+            color: white;
+            backdrop-filter: blur(5px);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.2); }
+            70% { box-shadow: 0 0 0 10px rgba(247, 37, 133, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0); }
+        }
+        
+        .alert-danger strong {
+            color: #ff9eb7;
+        }
+        
+        .alert-danger ul {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+        
+        .alert-danger li {
+            margin-bottom: 5px;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .application-container {
+                padding: 25px;
+                margin: 20px 15px;
+                border-radius: 12px;
+            }
+            
+            .form-col {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
 </head>
 <body>
-<div class="container mt-5">
-    <h2 class="mb-4 text-center">Verify Documents</h2>
+    <!-- Floating particles background -->
+    <div class="particles" id="particles"></div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
+    <div class="application-container">
+        <h2><i class="fas fa-file-alt"></i>Job Application Form</h2>
+    
+        <!-- Display Form Errors -->
+        {% if applicant_form.errors or document_form.errors %}
+            <div class="alert alert-danger">
+                <strong><i class="fas fa-exclamation-circle mr-2"></i>Errors:</strong>
+                <ul class="mb-0 mt-2">
+                    {% for field, errors in applicant_form.errors.items %}
+                        <li>{{ field }}: {{ errors.0 }}</li>
+                    {% endfor %}
+                    {% for field, errors in document_form.errors.items %}
+                        <li>{{ field }}: {{ errors.0 }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    
+        <!-- Form Start -->
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Personal Information Section -->
+            <div class="form-section" style="animation-delay: 0.1s">
+                <h5><i class="fas fa-user"></i>Personal Information</h5>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_name" class="form-label">Full Name</label>
+                        {{ applicant_form.name }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_email" class="form-label">Email</label>
+                        {{ applicant_form.email }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_phone" class="form-label">Phone Number</label>
+                        {{ applicant_form.phone }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_date_of_birth" class="form-label">Date of Birth</label>
+                        {{ applicant_form.date_of_birth }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_address" class="form-label">Address</label>
+                        {{ applicant_form.address }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Category Information Section -->
+            <div class="form-section" style="animation-delay: 0.2s">
+                <h5><i class="fas fa-tags"></i>Category Information</h5>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_caste_category" class="form-label">Caste Category</label>
+                        {{ applicant_form.caste_category }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_ews" class="form-label">EWS Category</label>
+                        {{ applicant_form.ews }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_aadhar_number" class="form-label">Aadhar Number</label>
+                        {{ applicant_form.aadhar_number }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Document Upload Section -->
+            <div class="form-section" style="animation-delay: 0.3s">
+                <h5><i class="fas fa-file-upload"></i>Document Uploads</h5>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_aadhar_document" class="form-label">Aadhar Document</label>
+                        {{ applicant_form.aadhaar_document }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_ews_certificate" class="form-label">EWS Certificate</label>
+                        {{ applicant_form.ews_certificate }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_caste_certificate" class="form-label">Caste Certificate</label>
+                        {{ applicant_form.caste_certificate }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_income_certificate" class="form-label">Income Certificate</label>
+                        {{ applicant_form.income_certificate }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Education Information Section -->
+            <div class="form-section" style="animation-delay: 0.4s">
+                <h5><i class="fas fa-graduation-cap"></i>Education Information</h5>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_university" class="form-label">University</label>
+                        {{ applicant_form.university }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_course" class="form-label">Course</label>
+                        {{ applicant_form.course }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_year_of_passing" class="form-label">Year of Passing</label>
+                        {{ applicant_form.year_of_passing }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_percentage" class="form-label">Percentage</label>
+                        {{ applicant_form.percentage }}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_marksheet_document" class="form-label">Marksheet Document</label>
+                        {{ applicant_form.marksheet_document }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Work Experience Section -->
+            <div class="form-section" style="animation-delay: 0.5s">
+                <h5><i class="fas fa-briefcase"></i>Work Experience</h5>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label for="id_work_experience" class="form-label">Work Experience (Years)</label>
+                        {{ applicant_form.work_experience }}
+                    </div>
+                    
+                    <div class="form-col">
+                        <label for="id_experience_certificate" class="form-label">Experience Certificate</label>
+                        {{ applicant_form.experience_certificate }}
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary" style="animation-delay: 0.6s">
+                <i class="fas fa-paper-plane mr-2"></i>Submit Application
+            </button>
+        </form>
+    </div>
 
-    <form method="POST">
-        {% csrf_token %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            
+            // Random size and position
+            const size = Math.random() * 8 + 2;
+            particle.style.width = `${size}px`;
+            particle.style.height = `${size}px`;
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `${Math.random() * 100}vh`;
+            
+            // Random animation
+            const duration = Math.random() * 20 + 10;
+            particle.style.animationDuration = `${duration}s`;
+            particle.style.animationDelay = `${Math.random() * -20}s`;
+            
+            container.appendChild(particle);
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                particle.remove();
+            }, duration * 1000);
+        }
         
-        <div class="form-group">
-            <label for="document_type">Select Document to Verify</label>
-            <select name="document_type" class="form-control">
-                <option value="aadhaar">Aadhaar</option>
-                <option value="ews">EWS Certificate</option>
-                <option value="caste">Caste Certificate</option>
-                <option value="marksheet">MARKSHEET</option>
-            </select>
-        </div>
+        // Generate particles
+        for (let i = 0; i < 50; i++) {
+            setTimeout(createParticles, i * 200);
+        }
+        setInterval(createParticles, 1000);
         
-        <button type="submit" class="btn btn-primary mt-3">Verify</button>
-    </form>
-</div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        // Add form control classes
+        document.querySelectorAll('input, select, textarea').forEach(input => {
+            input.classList.add('form-control');
+        });
+        
+        // Add special class to file inputs
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.classList.add('form-control-file');
+        });
+        
+        // Add sequential animations to form sections
+        document.querySelectorAll('.form-section').forEach((section, index) => {
+            section.style.animationDelay = `${index * 0.1 + 0.1}s`;
+        });
+    </script>
 </body>
 </html>
