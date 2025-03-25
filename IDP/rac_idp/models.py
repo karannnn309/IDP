@@ -1,6 +1,7 @@
 # models.py
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.timezone import now, timedelta
 
 class Applicant(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)  # Foreign key to User model
@@ -47,3 +48,11 @@ class ApplicationResult(models.Model):
 
     def _str_(self):
         return f"Result for {self.applicant.name} - {self.application_date}"
+
+class OTP(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        return now() < self.created_at + timedelta(minutes=5)  # OTP expires in 5 minutes

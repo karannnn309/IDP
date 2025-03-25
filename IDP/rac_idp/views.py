@@ -11,7 +11,45 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
+import random
+from django.core.mail import send_mail
+from django.utils.timezone import now
+from django.http import HttpResponseBadRequest, HttpResponseServerError
+from django.core.exceptions import ValidationError
+import logging
+from django.core.mail import EmailMessage
+import time
 
+logger = logging.getLogger(__name__)
+
+# Generate OTP
+def generate_otp():
+    return str(random.randint(100000, 999999))
+
+# views.py
+
+# views.py
+from django.core.mail import send_mail
+from django.conf import settings
+
+def send_otp_email(user, otp_code):
+    subject = "Your OTP Code"
+    message = f"Your verification code is: {otp_code}"
+    from_email = settings.DEFAULT_FROM_EMAIL
+    recipient_list = [user.email]
+    
+    try:
+        send_mail(
+            subject,
+            message,
+            from_email,
+            recipient_list,
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return False
 
 def landing_page(request):
     return render(request, "landing.html")
@@ -20,206 +58,230 @@ def signup_view(request):
     if request.method == "POST":
         form = SignupForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            # Create an Applicant record for the user after successful signup
-            Applicant.objects.create(user=user)  # Automatically create the applicant profile
-            return redirect('login')  # Redirect to applicant dashboard after signup
+            try:
+                user = form.save()
+                login(request, user)
+                Applicant.objects.create(user=user)
+                messages.success(request, "Account created successfully! Please log in.")
+                return redirect('login')
+            except Exception as e:
+                logger.error(f"Error during signup: {e}")
+                messages.error(request, "An error occurred during signup. Please try again.")
         else:
-            print(form.errors)
+            logger.warning(f"Signup form errors: {form.errors}")
+            messages.error(request, "Please correct the errors below.")
     else:
-        
         form = SignupForm()
     return render(request, 'auth/signup.html', {'form': form})
 
+# views.py
 def login_view(request):
     if request.method == "POST":
-        form = AuthenticationForm(data=request.POST)
+        form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+            otp_code = generate_otp()
+            
+            # Save OTP to database
+            OTP.objects.update_or_create(
+                user=user, 
+                defaults={"code": otp_code, "created_at": now()}
+            )
+            
+            # Send OTP via email
+            if send_otp_email(user, otp_code):
+                request.session["otp_user_id"] = user.id
+                return redirect("otp_verification")
+            else:
+                messages.error(request, "Failed to send OTP. Please try again.")
+    
+    return render(request, 'auth/login.html', {'form': AuthenticationForm()})
+def otp_verification_view(request):
+    user_id = request.session.get("otp_user_id")
+    if not user_id:
+        messages.error(request, "OTP session expired or invalid.")
+        return redirect("login")
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        messages.error(request, "Invalid user.")
+        return redirect("login")
+
+    if request.method == "POST":
+        otp_entered = request.POST.get("otp", "").strip()
+        if not otp_entered:
+            messages.error(request, "Please enter the OTP.")
+            return render(request, "auth/otp_verification.html")
+
+        # Check database OTP first
+        otp_instance = OTP.objects.filter(user=user).first()
+        
+        # If no DB OTP or it's invalid, check session fallback
+        if not otp_instance or not otp_instance.is_valid():
+            fallback_otp = request.session.get('fallback_otp')
+            if fallback_otp and fallback_otp == otp_entered:
+                login(request, user)
+                del request.session["otp_user_id"]
+                del request.session["fallback_otp"]
+                messages.success(request, "Logged in successfully! (via fallback OTP)")
+                return redirect("applicant_dashboard")
+            else:
+                messages.error(request, "Invalid or expired OTP.")
+                return render(request, "auth/otp_verification.html")
+        
+        # Normal OTP verification
+        if otp_instance.code == otp_entered:
             login(request, user)
-            return redirect('applicant_dashboard')  # Redirect to applicant dashboard after login
-    else:
-        form = AuthenticationForm()
-    return render(request, 'auth/login.html', {'form': form})
+            otp_instance.delete()
+            del request.session["otp_user_id"]
+            if 'fallback_otp' in request.session:
+                del request.session["fallback_otp"]
+            messages.success(request, "Logged in successfully!")
+            return redirect("applicant_dashboard")
+        else:
+            messages.error(request, "Invalid OTP. Please try again.")
+
+    return render(request, "auth/otp_verification.html")
 
 def logout_view(request):
     logout(request)
-    messages.success(request, "You have logged out.")
+    messages.success(request, "You have been logged out successfully.")
     return redirect('landing')
 
 @login_required
 def applicant_dashboard(request):
-    # Fetch the applicant profile for the logged-in user
-    applicant = get_object_or_404(Applicant, user=request.user)
+    try:
+        applicant = Applicant.objects.get(user=request.user)
+        has_applied = ApplicationResult.objects.filter(applicant=applicant).exists()
+        past_results = ApplicationResult.objects.filter(applicant=applicant) if has_applied else None
+        
+        return render(request, "dashboard.html", {
+            "has_applied": has_applied,
+            "past_results": past_results
+        })
+    except Applicant.DoesNotExist:
+        messages.error(request, "Applicant profile not found.")
+        return redirect('landing')
 
-    # Check if the applicant has already submitted an application
-    has_applied = ApplicationResult.objects.filter(applicant=applicant).exists()
-
-    # Fetch past application results if available
-    past_results = ApplicationResult.objects.filter(applicant=applicant) if has_applied else None
-
-    return render(request, "dashboard.html", {
-        "has_applied": has_applied,
-        "past_results": past_results
-    })
-# View to handle document submission and analysis
 @login_required
 def submit_application(request):
-    user = request.user  # Logged-in user
-
     try:
-        # Try to fetch the existing applicant for the user
-        applicant = Applicant.objects.get(user=user)
+        applicant = Applicant.objects.get(user=request.user)
     except Applicant.DoesNotExist:
-        applicant = None  # If not found, set to None
+        applicant = None
 
     if request.method == 'POST':
-        if applicant:
-            applicant_form = ApplicantForm(request.POST, request.FILES, instance=applicant)  # Update existing applicant
+        form = ApplicantForm(request.POST, request.FILES, instance=applicant)
+        if form.is_valid():
+            try:
+                applicant = form.save(commit=False)
+                applicant.user = request.user
+                applicant.save()
+                messages.success(request, "Application submitted successfully!")
+                return redirect('verify_document', applicant_id=applicant.id)
+            except Exception as e:
+                logger.error(f"Error saving application: {e}")
+                messages.error(request, "An error occurred while saving your application.")
         else:
-            applicant_form = ApplicantForm(request.POST, request.FILES)  # Create new applicant
-        
-        if applicant_form.is_valid():
-            applicant = applicant_form.save(commit=False)
-            applicant.user = user  # Assign the logged-in user
-            applicant.save()
-            
-            return redirect('verify_document', applicant_id=applicant.id)  # Redirect after successful submission
-        else:
-            print(applicant_form.errors)  # Debugging
-
+            logger.warning(f"Application form errors: {form.errors}")
+            messages.error(request, "Please correct the errors below.")
     else:
-        applicant_form = ApplicantForm(instance=applicant)  # Load form with existing data if any
+        form = ApplicantForm(instance=applicant)
 
-    return render(request, 'submit_application.html', {'applicant_form': applicant_form})
-
-
-@login_required
-def view_result(request, result_id):
-    # Fetch application result or return 404
-    result = get_object_or_404(ApplicationResult, id=result_id, applicant__user=request.user)
-
-    # Parse mismatches JSON string into a Python dictionary
-    mismatches_data = json.loads(result.mismatches)
-
-    return render(request, "view_results.html", {
-        "result": result,
-        "mismatches": mismatches_data.get("mismatches", {}),
-        "similarities": mismatches_data.get("similarities", {}),
-        "missing_fields": mismatches_data.get("missing_fields", []),
-        "extra_fields": mismatches_data.get("extra_fields", [])
-    })
-
-
-
-
+    return render(request, 'submit_application.html', {'applicant_form': form})
 
 @login_required
 def verify_document(request, applicant_id):
-    applicant = get_object_or_404(Applicant, id=applicant_id)
+    try:
+        applicant = Applicant.objects.get(id=applicant_id, user=request.user)
+    except Applicant.DoesNotExist:
+        messages.error(request, "Applicant not found.")
+        return redirect('applicant_dashboard')
 
-    # Ensure that the applicant has an ApplicationResult
+    # Get or create application result
     application_result, created = ApplicationResult.objects.get_or_create(applicant=applicant)
 
     if request.method == "POST":
-        document_type = request.POST.get("document_type")  # Get document type selected by user
+        document_type = request.POST.get("document_type")
         
-        # Define mapping of document types to model fields
-        document_fields = {
+        if not document_type or document_type not in ["aadhaar", "marksheet"]:
+            messages.error(request, "Invalid document type selected.")
+            return redirect("verify_document", applicant_id=applicant.id)
+
+        # Map document type to model field
+        document_field_map = {
             "aadhaar": "aadhaar_document",
             "marksheet": "marksheet_document",
         }
         
-        # Get document field name from mapping
-        document_field = document_fields.get(document_type)
-        
-        if not document_field:
-            messages.error(request, "Invalid document type selected.")
-            return redirect("verify_document", applicant_id=applicant.id)
-
-        # Get the actual document file from the Applicant model
+        document_field = document_field_map.get(document_type)
         document_file = getattr(applicant, document_field, None)
-
+        
         if not document_file:
-            messages.error(request, f"{document_type.capitalize()} document not found.")
+            messages.error(request, f"{document_type.capitalize()} document not uploaded.")
             return redirect("verify_document", applicant_id=applicant.id)
-
-        document_path = document_file.path
-
-        if not os.path.exists(document_path):
-            print(f"❌ {document_type.capitalize()} document file not found: {document_path}")
-            return redirect("error")  # Redirect to an error page or handle as necessary
-
-        print(f"📂 Processing {document_type.capitalize()} document: {document_path}")
 
         try:
-            # Step 1: Extract text from document
+            document_path = document_file.path
+            if not os.path.exists(document_path):
+                logger.error(f"Document file not found: {document_path}")
+                messages.error(request, "Document file not found. Please re-upload.")
+                return redirect("verify_document", applicant_id=applicant.id)
+
+            # Extract text from document
             extracted_text = extract_text(document_path)
-
             if not extracted_text.strip():
-                print("⚠️ No text extracted from document.")
                 messages.error(request, "No readable text extracted from document.")
-                return redirect("verify_documents", applicant_id=applicant.id)
+                return redirect("verify_document", applicant_id=applicant.id)
 
-            print(f"📝 Extracted Text from {document_type.capitalize()} Document:\n{extracted_text}")
-
-            # Step 2: Prepare expected data based on document type
-            expected_data = {}
-
-            if document_type == "aadhaar":
-                expected_data = {
+            # Prepare expected data based on document type
+            expected_data = {
+                "aadhaar": {
                     "name": applicant.name,
                     "date_of_birth": applicant.date_of_birth.strftime("%Y-%m-%d") if applicant.date_of_birth else None,
                     "address": applicant.address,
                     "aadhar_number": applicant.aadhar_number,
                     "phone": applicant.phone,
-                }
-            elif document_type == "marksheet":
-                expected_data = {
+                },
+                "marksheet": {
                     "name": applicant.name,
                     "date_of_birth": applicant.date_of_birth.strftime("%Y-%m-%d") if applicant.date_of_birth else None,
-                    #"roll_number": applicant.roll_number,
                     "university": applicant.university,
                     "course": applicant.course,
                     "year_of_passing": applicant.year_of_passing,
                     "percentage": applicant.percentage,
                 }
+            }.get(document_type, {})
 
-            # Step 3: Send extracted text & expected data to Gemini API for validation
+            # Send to Gemini API for validation
             gemini_response = send_to_gemini(extracted_text, expected_data)
-
             if not gemini_response or "error" in gemini_response:
-                print("❌ Gemini API response contains an error:", gemini_response.get("error", "Unknown error"))
-
+                logger.error(f"Gemini API error: {gemini_response.get('error', 'Unknown error')}")
                 messages.error(request, "Error validating document with AI.")
-                return redirect("verify_documents", applicant_id=applicant.id)
+                return redirect("verify_document", applicant_id=applicant.id)
 
-            # Step 4: Process and save extracted data
-            extracted_fields = {str(k): v for k, v in gemini_response.items()}  # Ensure JSON serializability
+            # Process and save extracted data
+            extracted_fields = {str(k): v for k, v in gemini_response.items()}
             applicant.extracted_data = json.dumps(extracted_fields, indent=2)
             applicant.expected_json = json.dumps(expected_data, indent=2)
-            applicant.save()
-
-            print(f"✅ Extracted Fields: {json.dumps(extracted_fields, indent=2)}")
-
-            # Step 5: Validate extracted data against expected data
+            
+            # Validate and calculate mismatches
             validation_result = validate_gemini_response(expected_data, extracted_fields)
-
-            # Step 6: Calculate overall mismatch percentage
-            total_mismatches = sum(mismatch["Mismatch %"] for mismatch in validation_result["mismatches"].values())
+            total_mismatches = sum(mismatch.get("Mismatch %", 0) 
+                           for mismatch in validation_result.get("mismatches", {}).values())
             num_fields = len(expected_data)
             overall_mismatch_percentage = round(total_mismatches / num_fields, 2) if num_fields else 0
 
-            # Step 7: Save ApplicationResult with mismatches
+            # Save results
             application_result.mismatches = json.dumps(validation_result, indent=2)
             application_result.mismatch_percentage = overall_mismatch_percentage
             applicant.mismatch_percentage = overall_mismatch_percentage
+            
+            applicant.save()
             application_result.save()
 
-            print(f"🔍 Validation Result: {json.dumps(validation_result, indent=2)}")
-
-            # Step 8: Generate mismatch visualization if mismatches exist
+            # Generate visualization if needed
             if validation_result.get("mismatches") or validation_result.get("missing_fields"):
                 visualize_mismatches(validation_result, applicant.id)
 
@@ -227,24 +289,31 @@ def verify_document(request, applicant_id):
             return redirect("applicant_results", applicant_id=applicant.id)
 
         except Exception as e:
-            print(f"❌ Error processing document: {e}")
-            messages.error(request, "Error processing document.")
+            logger.error(f"Error processing document: {e}")
+            messages.error(request, "An error occurred while processing your document.")
             return redirect("verify_document", applicant_id=applicant.id)
 
     return render(request, "verify_documents.html", {"applicant": applicant})
 
 @login_required
 def applicant_results(request, applicant_id):
-    # Fetch the associated applicant and result records for the logged-in user
-    applicant = get_object_or_404(Applicant, id=applicant_id, user=request.user)  # Ensure it's the correct user
-    application_result = get_object_or_404(ApplicationResult, applicant=applicant)
+    try:
+        applicant = Applicant.objects.get(id=applicant_id, user=request.user)
+        application_result = ApplicationResult.objects.get(applicant=applicant)
+    except (Applicant.DoesNotExist, ApplicationResult.DoesNotExist) as e:
+        messages.error(request, "Results not found.")
+        return redirect('applicant_dashboard')
 
-    # Handle extracted data and mismatches as before
-    extracted_data = json.loads(applicant.extracted_data) if applicant.extracted_data else {}
-    expected_data = json.loads(applicant.expected_json) if applicant.expected_json else {}
-    mismatches = json.loads(application_result.mismatches) if application_result.mismatches else {}
+    try:
+        extracted_data = json.loads(applicant.extracted_data) if applicant.extracted_data else {}
+        expected_data = json.loads(applicant.expected_json) if applicant.expected_json else {}
+        mismatches = json.loads(application_result.mismatches) if application_result.mismatches else {}
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error: {e}")
+        messages.error(request, "Error loading results data.")
+        return redirect('applicant_dashboard')
 
-    # Convert mismatches dictionary into a list for easy iteration in the template
+    # Format mismatches for template
     formatted_mismatches = []
     for field, details in mismatches.get("mismatches", {}).items():
         formatted_mismatches.append({
@@ -254,21 +323,46 @@ def applicant_results(request, applicant_id):
             "mismatch_percentage": details.get("Mismatch %", 0),
         })
 
-    overall_mismatch_percentage =application_result.mismatch_percentage
-
-    # Generate mismatch visualization only if mismatches exist
+    # Generate plot URL if exists
     mismatch_plot_url = None
-    if mismatches:
-        mismatch_plot_path = visualize_mismatches(mismatches, applicant.id)
-        application_result.mismatch_plot_path = mismatch_plot_path
-        if mismatch_plot_path:
-            mismatch_plot_url = settings.MEDIA_URL + os.path.basename(mismatch_plot_path)
+    if application_result.mismatch_plot_path:
+        mismatch_plot_url = settings.MEDIA_URL + os.path.basename(application_result.mismatch_plot_path)
 
     return render(request, "results.html", {
         "applicant": applicant,
         "extracted_data": extracted_data,
         "expected_data": expected_data,
         "mismatches": formatted_mismatches,
-        "mismatch_plot_path": mismatch_plot_url,
-        "mismatch":overall_mismatch_percentage
+        "mismatch_plot_url": mismatch_plot_url,
+        "overall_mismatch": application_result.mismatch_percentage
     })
+
+@login_required
+def view_result(request, result_id):
+    try:
+        result = ApplicationResult.objects.get(id=result_id, applicant__user=request.user)
+        mismatches_data = json.loads(result.mismatches) if result.mismatches else {}
+    except (ApplicationResult.DoesNotExist, json.JSONDecodeError) as e:
+        messages.error(request, "Result not found or invalid.")
+        return redirect('applicant_dashboard')
+
+    return render(request, "view_results.html", {
+        "result": result,
+        "mismatches": mismatches_data.get("mismatches", {}),
+        "similarities": mismatches_data.get("similarities", {}),
+        "missing_fields": mismatches_data.get("missing_fields", []),
+        "extra_fields": mismatches_data.get("extra_fields", [])
+    })
+
+# views.py
+from django.http import HttpResponse
+
+def test_email(request):
+    send_mail(
+        'Test Subject',
+        'Test message body.',
+        settings.EMAIL_HOST_USER,
+        ['recipient@gmail.com'],  # Your test email
+        fail_silently=False,
+    )
+    return HttpResponse("Test email sent - check your inbox!")
