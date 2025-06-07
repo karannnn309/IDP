@@ -1,4 +1,5 @@
 # 🧠 Intelligent Document Processing (IDP) System
+https://github.com/karannnn309/IDP/issues/1
 
 An AI-powered web-based document verification system developed to validate user-submitted documents by extracting information using OCR/NLP techniques and comparing it against form input data. This project is designed to streamline and automate the document validation process for organizations like the **Recruitment and Assessment Centre (RAC), DRDO**.
 
@@ -27,6 +28,8 @@ An AI-powered web-based document verification system developed to validate user-
 - **Authentication**: Django Auth System
 
 ---
+WEBSITE OUTPUT=https://github.com/karannnn309/IDP/issues/1
+
 
 ## 🚀 Getting Started
 
