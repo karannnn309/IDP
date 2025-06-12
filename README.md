@@ -44,8 +44,8 @@ WEBSITE OUTPUT=https://github.com/karannnn309/IDP/issues/1#issue-3127352567
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/idp-system.git
-cd idp-system
+git clone https://github.com/karannnn309/IDP.git
+cd IDP
 
 # Create a virtual environment
 python -m venv venv
